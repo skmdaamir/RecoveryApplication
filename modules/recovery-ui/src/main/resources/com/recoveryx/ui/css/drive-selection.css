@@ -1,0 +1,151 @@
+.root {
+    -fx-font-family: "Segoe UI", "Inter", sans-serif;
+    -fx-background-color: linear-gradient(to bottom, #0f172a, #111827);
+    -fx-text-fill: #e5e7eb;
+}
+
+.top-shell {
+    -fx-background-color: rgba(15, 23, 42, 0.96);
+    -fx-border-color: transparent transparent rgba(148, 163, 184, 0.22) transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.toolbar {
+    -fx-background-color: transparent;
+}
+
+.app-title {
+    -fx-text-fill: #f8fafc;
+    -fx-font-size: 20px;
+    -fx-font-weight: 700;
+}
+
+.page-title {
+    -fx-text-fill: #93c5fd;
+    -fx-font-size: 15px;
+    -fx-font-weight: 600;
+}
+
+.content-shell {
+    -fx-background-color: transparent;
+}
+
+.section-header {
+    -fx-background-color: transparent;
+}
+
+.section-title {
+    -fx-text-fill: #f8fafc;
+    -fx-font-size: 18px;
+    -fx-font-weight: 700;
+}
+
+.section-subtitle {
+    -fx-text-fill: #94a3b8;
+    -fx-font-size: 13px;
+}
+
+.device-table {
+    -fx-background-color: rgba(17, 24, 39, 0.88);
+    -fx-border-color: rgba(148, 163, 184, 0.18);
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-padding: 6;
+    -fx-table-cell-border-color: rgba(148, 163, 184, 0.10);
+}
+
+.device-table .column-header-background {
+    -fx-background-color: rgba(30, 41, 59, 0.95);
+    -fx-background-radius: 10 10 0 0;
+}
+
+.device-table .column-header,
+.device-table .filler {
+    -fx-size: 42px;
+    -fx-border-color: transparent transparent rgba(148, 163, 184, 0.15) transparent;
+}
+
+.device-table .column-header .label {
+    -fx-text-fill: #cbd5e1;
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+}
+
+.table-row-cell {
+    -fx-background-color: rgba(15, 23, 42, 0.72);
+    -fx-text-background-color: #e5e7eb;
+}
+
+.table-row-cell:filled:selected {
+    -fx-background-color: rgba(37, 99, 235, 0.35);
+}
+
+.table-row-cell:filled:hover {
+    -fx-background-color: rgba(30, 41, 59, 0.96);
+}
+
+.table-cell {
+    -fx-text-fill: #e5e7eb;
+    -fx-font-size: 13px;
+    -fx-padding: 10 12 10 12;
+}
+
+.selection-panel {
+    -fx-background-color: rgba(17, 24, 39, 0.92);
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-color: rgba(148, 163, 184, 0.18);
+}
+
+.summary-title {
+    -fx-text-fill: #93c5fd;
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+}
+
+.summary-value {
+    -fx-text-fill: #f8fafc;
+    -fx-font-size: 15px;
+    -fx-font-weight: 600;
+}
+
+.status-text {
+    -fx-text-fill: #94a3b8;
+    -fx-font-size: 12px;
+}
+
+.primary-button {
+    -fx-background-color: #2563eb;
+    -fx-text-fill: white;
+    -fx-font-weight: 700;
+    -fx-background-radius: 8;
+    -fx-padding: 10 18 10 18;
+}
+
+.primary-button:hover {
+    -fx-background-color: #1d4ed8;
+}
+
+.primary-button:pressed {
+    -fx-background-color: #1e40af;
+}
+
+.secondary-button {
+    -fx-background-color: rgba(51, 65, 85, 0.95);
+    -fx-text-fill: #e2e8f0;
+    -fx-font-weight: 600;
+    -fx-background-radius: 8;
+    -fx-padding: 10 18 10 18;
+}
+
+.secondary-button:hover {
+    -fx-background-color: rgba(71, 85, 105, 0.95);
+}
+
+.secondary-button:pressed {
+    -fx-background-color: rgba(51, 65, 85, 1.0);
+}
+
+.progress-indicator {
+    -fx-progress-color: #60a5fa;
+}

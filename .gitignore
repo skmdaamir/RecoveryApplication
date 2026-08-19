@@ -1,0 +1,34 @@
+# === Maven Build Outputs ===
+target/
+**/target/
+*.jar
+*.war
+*.ear
+*.nar
+
+# === Java Compilation Logs & Crash Dumps ===
+*.class
+*.log
+*.dumpstream
+*.lst
+**/surefire-reports/
+
+# === IDE Configurations ===
+# VS Code
+.vscode/
+.history/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# === OS & System Files ===
+Thumbs.db
+desktop.ini
+.DS_Store
