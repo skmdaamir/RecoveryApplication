@@ -1,90 +1,63 @@
 package com.recoveryx.ui.controller.drive;
 
+import com.recoveryx.core.model.scan.ScanMode;
+import com.recoveryx.core.model.scan.ScanRequest;
+import com.recoveryx.ui.shell.ApplicationShell;
 import com.recoveryx.ui.viewmodel.drive.DeviceItemViewModel;
 import com.recoveryx.ui.viewmodel.drive.DriveSelectionViewModel;
 import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ProgressIndicator;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
+import javafx.stage.DirectoryChooser;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
 import java.util.Objects;
 
 /**
  * Spring-managed controller for the Drive Selection screen.
- * Uses MVVM: all UI logic delegates to DriveSelectionViewModel.
+ * Navigates to the Scan Results view on scan initiation.
  */
 @Component
 public class DriveSelectionController {
 
-    @FXML
-    private TableView<DeviceItemViewModel> deviceTable;
-
-    @FXML
-    private TableColumn<DeviceItemViewModel, String> nameColumn;
-
-    @FXML
-    private TableColumn<DeviceItemViewModel, String> pathColumn;
-
-    @FXML
-    private TableColumn<DeviceItemViewModel, String> typeColumn;
-
-    @FXML
-    private TableColumn<DeviceItemViewModel, String> fsColumn;
-
-    @FXML
-    private TableColumn<DeviceItemViewModel, String> sizeColumn;
-
-    @FXML
-    private TableColumn<DeviceItemViewModel, String> healthColumn;
-
-    @FXML
-    private Label statusLabel;
-
-    @FXML
-    private ProgressIndicator progressIndicator;
-
-    @FXML
-    private Button refreshButton;
-
-    @FXML
-    private Button quickScanButton;
-
-    @FXML
-    private Label selectedDriveLabel;
+    @FXML private TableView<DeviceItemViewModel> deviceTable;
+    @FXML private TableColumn<DeviceItemViewModel, String> nameColumn;
+    @FXML private TableColumn<DeviceItemViewModel, String> pathColumn;
+    @FXML private TableColumn<DeviceItemViewModel, String> typeColumn;
+    @FXML private TableColumn<DeviceItemViewModel, String> fsColumn;
+    @FXML private TableColumn<DeviceItemViewModel, String> sizeColumn;
+    @FXML private TableColumn<DeviceItemViewModel, String> healthColumn;
+    @FXML private Label statusLabel;
+    @FXML private ProgressIndicator progressIndicator;
+    @FXML private Button refreshButton;
+    @FXML private Button quickScanButton;
+    @FXML private Label selectedDriveLabel;
 
     private final DriveSelectionViewModel viewModel;
+    private final ApplicationShell applicationShell;
 
-    public DriveSelectionController(DriveSelectionViewModel viewModel) {
+    public DriveSelectionController(DriveSelectionViewModel viewModel,
+                                    ApplicationShell applicationShell) {
         this.viewModel = Objects.requireNonNull(viewModel, "viewModel");
+        this.applicationShell = Objects.requireNonNull(applicationShell, "applicationShell");
     }
 
     @FXML
     public void initialize() {
-        // Bind columns to view model properties
-        nameColumn.setCellValueFactory(data ->
-                data.getValue().displayNameProperty());
-        pathColumn.setCellValueFactory(data ->
-                data.getValue().devicePathProperty());
-        typeColumn.setCellValueFactory(data ->
-                data.getValue().deviceTypeProperty());
-        fsColumn.setCellValueFactory(data ->
-                data.getValue().fileSystemProperty());
-        sizeColumn.setCellValueFactory(data ->
-                data.getValue().sizeTextProperty());
-        healthColumn.setCellValueFactory(data ->
-                data.getValue().accessibilityTextProperty());
+        // Bind columns
+        nameColumn.setCellValueFactory(data -> data.getValue().displayNameProperty());
+        pathColumn.setCellValueFactory(data -> data.getValue().devicePathProperty());
+        typeColumn.setCellValueFactory(data -> data.getValue().deviceTypeProperty());
+        fsColumn.setCellValueFactory(data -> data.getValue().fileSystemProperty());
+        sizeColumn.setCellValueFactory(data -> data.getValue().sizeTextProperty());
+        healthColumn.setCellValueFactory(data -> data.getValue().accessibilityTextProperty());
 
-        // Wire table to ViewModel list and selection
         deviceTable.setItems(viewModel.getDevices());
         deviceTable.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) ->
                 viewModel.setSelectedDevice(newVal));
 
-        // Bind status, progress, and selection summary
+        // Bind status/progress
         statusLabel.textProperty().bind(viewModel.statusMessageProperty());
         progressIndicator.progressProperty().bind(viewModel.progressProperty());
         progressIndicator.visibleProperty().bind(viewModel.loadingProperty());
@@ -92,17 +65,13 @@ public class DriveSelectionController {
 
         selectedDriveLabel.textProperty().bind(Bindings.createStringBinding(() -> {
             DeviceItemViewModel item = viewModel.getSelectedDevice();
-            if (item == null || item.getDisplayName() == null) {
-                return "No drive selected";
-            }
+            if (item == null || item.getDisplayName() == null) return "No drive selected";
             return "Selected: " + item.getDisplayName() + " | " + item.getSizeText();
         }, viewModel.selectedDeviceProperty()));
 
-        // Bind button states
         refreshButton.disableProperty().bind(viewModel.loadingProperty());
         quickScanButton.disableProperty().bind(viewModel.quickScanAllowedProperty().not());
 
-        // Initial load
         viewModel.loadDevices();
     }
 
@@ -113,19 +82,50 @@ public class DriveSelectionController {
 
     @FXML
     private void onQuickScan() {
-        try {
-            viewModel.startQuickScan();
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Quick Scan Created");
-            alert.setHeaderText("Scan session created successfully");
-            alert.setContentText("Session ID: " + viewModel.getActiveSessionId());
-            alert.showAndWait();
-        } catch (Exception ex) {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Quick Scan Error");
-            alert.setHeaderText("Unable to create quick scan session");
-            alert.setContentText(ex.getMessage());
-            alert.showAndWait();
+        launchScan(ScanMode.QUICK);
+    }
+
+    private void launchScan(ScanMode mode) {
+        DeviceItemViewModel selected = viewModel.getSelectedDevice();
+        if (selected == null || selected.getDevice() == null) {
+            showError("No Drive Selected", "Please select a drive before scanning.");
+            return;
         }
+        if (!selected.getDevice().isReadable()) {
+            showError("Drive Not Accessible", "The selected drive cannot be read.");
+            return;
+        }
+
+        // Ask for destination
+        DirectoryChooser chooser = new DirectoryChooser();
+        chooser.setTitle("Choose Recovery Destination Folder");
+        String defaultDest = "D:" + File.separator + "Recovered Files";
+        File defaultDir = new File(defaultDest);
+        if (!defaultDir.exists()) {
+            defaultDir = new File(System.getProperty("user.home") + File.separator + "Recovered Files");
+            defaultDir.mkdirs();
+        }
+        chooser.setInitialDirectory(defaultDir.exists() ? defaultDir : new File(System.getProperty("user.home")));
+
+        File dest = chooser.showDialog(deviceTable.getScene().getWindow());
+        String destinationPath = dest != null ? dest.getAbsolutePath() : defaultDest;
+
+        ScanRequest request = ScanRequest.builder()
+                .storageDevice(selected.getDevice())
+                .scanMode(mode)
+                .includeDeletedEntries(true)
+                .includeRawSignatureScan(mode == ScanMode.DEEP)
+                .build();
+
+        // Navigate to scan results view
+        applicationShell.showScanResults(request, destinationPath);
+    }
+
+    private void showError(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 }

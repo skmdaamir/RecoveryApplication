@@ -1,11 +1,13 @@
 package com.recoveryx.ui.config;
 
+import com.recoveryx.common.enumtype.ApplicationTheme;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration;
 import org.springframework.boot.autoconfigure.validation.ValidationAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -21,8 +23,8 @@ class RecoveryAppPropertiesTest {
     void shouldBindValidProperties() {
         contextRunner
                 .withPropertyValues(
-                        "recoveryx.application-name=RecoveryX Pro",
-                        "recoveryx.ui.theme=dark"
+                        "recoveryx.app.theme=DARK",
+                        "recoveryx.app.scan-threads=8"
                 )
                 .run(context -> {
                     assertThat(context).hasNotFailed();
@@ -31,10 +33,8 @@ class RecoveryAppPropertiesTest {
                     RecoveryAppProperties properties =
                             context.getBean(RecoveryAppProperties.class);
 
-                    assertThat(properties.getApplicationName())
-                            .isEqualTo("RecoveryX Pro");
-                    assertThat(properties.getUi().getTheme())
-                            .isEqualTo("dark");
+                    assertThat(properties.getTheme()).isEqualTo(ApplicationTheme.DARK);
+                    assertThat(properties.getScanThreads()).isEqualTo(8);
                 });
     }
 

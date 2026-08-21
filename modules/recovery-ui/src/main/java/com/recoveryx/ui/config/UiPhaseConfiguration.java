@@ -19,4 +19,10 @@ public class UiPhaseConfiguration {
             ScanOrchestrationService scanOrchestrationService) {
         return new DriveSelectionViewModel(deviceDiscoveryService, scanOrchestrationService);
     }
+
+    @Bean
+    public com.recoveryx.ui.viewmodel.drive.DiskImageSelectionViewModel diskImageSelectionViewModel(
+            ScanOrchestrationService scanOrchestrationService) {
+        return new com.recoveryx.ui.viewmodel.drive.DiskImageSelectionViewModel(scanOrchestrationService);
+    }
 }

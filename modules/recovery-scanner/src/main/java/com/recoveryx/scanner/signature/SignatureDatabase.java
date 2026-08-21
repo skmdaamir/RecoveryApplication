@@ -125,6 +125,105 @@ public final class SignatureDatabase {
                 150 * 1024 * 1024L,
                 99));
 
+        // Canon Camera RAW v3 (.CR3)
+        list.add(new FileSignature(
+                "cr3",
+                FileCategory.RAW_IMAGE,
+                "Canon RAW Image (.CR3)",
+                new byte[]{0x63, 0x72, 0x78, 0x20}, // crx 
+                8, // offset 8
+                null,
+                150 * 1024 * 1024L,
+                98));
+
+        // Nikon Camera RAW (.NEF)
+        list.add(new FileSignature(
+                "nef",
+                FileCategory.RAW_IMAGE,
+                "Nikon RAW Image (.NEF)",
+                new byte[]{0x49, 0x49, 0x2A, 0x00, (byte) 0x1C, 0x00, 0x00, 0x00},
+                0,
+                null,
+                150 * 1024 * 1024L,
+                99));
+
+        // Sony Camera RAW (.ARW)
+        list.add(new FileSignature(
+                "arw",
+                FileCategory.RAW_IMAGE,
+                "Sony RAW Image (.ARW)",
+                new byte[]{0x49, 0x49, 0x2A, 0x00},
+                0,
+                null,
+                150 * 1024 * 1024L,
+                92));
+
+        // Adobe Digital Negative (.DNG)
+        list.add(new FileSignature(
+                "dng",
+                FileCategory.RAW_IMAGE,
+                "Adobe RAW Digital Negative (.DNG)",
+                new byte[]{0x49, 0x49, 0x2A, 0x00},
+                0,
+                null,
+                150 * 1024 * 1024L,
+                90));
+
+        // Fujifilm Camera RAW (.RAF)
+        list.add(new FileSignature(
+                "raf",
+                FileCategory.RAW_IMAGE,
+                "Fujifilm RAW Image (.RAF)",
+                new byte[]{0x46, 0x55, 0x4A, 0x49, 0x46, 0x49, 0x4C, 0x4D}, // FUJIFILM
+                0,
+                null,
+                150 * 1024 * 1024L,
+                99));
+
+        // Olympus Camera RAW (.ORF)
+        list.add(new FileSignature(
+                "orf",
+                FileCategory.RAW_IMAGE,
+                "Olympus RAW Image (.ORF)",
+                new byte[]{0x49, 0x49, 0x52, 0x4F}, // IIRO
+                0,
+                null,
+                150 * 1024 * 1024L,
+                99));
+
+        // Panasonic Camera RAW (.RW2)
+        list.add(new FileSignature(
+                "rw2",
+                FileCategory.RAW_IMAGE,
+                "Panasonic RAW Image (.RW2)",
+                new byte[]{0x49, 0x49, 0x55, 0x00}, // IIU.
+                0,
+                null,
+                150 * 1024 * 1024L,
+                99));
+
+        // Google WebP Image (.webp)
+        list.add(new FileSignature(
+                "webp",
+                FileCategory.IMAGE,
+                "WebP Image",
+                new byte[]{0x57, 0x45, 0x42, 0x50}, // WEBP
+                8, // offset 8
+                null,
+                50 * 1024 * 1024L,
+                95));
+
+        // Apple / Modern Phone HEIC Image (.heic)
+        list.add(new FileSignature(
+                "heic",
+                FileCategory.IMAGE,
+                "High Efficiency Image (.HEIC)",
+                new byte[]{0x68, 0x65, 0x69, 0x63}, // heic
+                8, // offset 8
+                null,
+                50 * 1024 * 1024L,
+                95));
+
         // 2. Documents
         // PDF Document
         list.add(new FileSignature(

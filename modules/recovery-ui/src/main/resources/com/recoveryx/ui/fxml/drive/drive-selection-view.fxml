@@ -9,11 +9,11 @@
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Priority?>
 <?import javafx.scene.layout.VBox?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21"
-            xmlns:fx="http://javafx.com/fxml/1">
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.recoveryx.ui.controller.drive.DriveSelectionController">
 
     <top>
         <VBox spacing="0.0" styleClass="top-shell">
@@ -37,7 +37,7 @@
                         <Button fx:id="quickScanButton"
                                 mnemonicParsing="false"
                                 onAction="#onQuickScan"
-                                text="Quick Scan"
+                                text="⚡ Quick Scan"
                                 styleClass="primary-button"/>
                     </children>
                     <padding>
@@ -64,8 +64,10 @@
 
                 <TableView fx:id="deviceTable"
                            VBox.vgrow="ALWAYS"
-                           columnResizePolicy="CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS"
                            styleClass="device-table">
+                    <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                    </columnResizePolicy>
                     <columns>
                         <TableColumn fx:id="nameColumn" text="Name" prefWidth="240.0"/>
                         <TableColumn fx:id="pathColumn" text="Path" prefWidth="140.0"/>
