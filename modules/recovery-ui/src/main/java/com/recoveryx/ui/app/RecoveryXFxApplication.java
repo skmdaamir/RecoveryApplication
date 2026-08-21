@@ -7,8 +7,9 @@ import javafx.application.Platform;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import javafx.scene.Scene;
 import org.springframework.context.ConfigurableApplicationContext;
+
+import java.util.Objects;
 
 /**
  * Primary JavaFX application lifecycle for RecoveryX Pro.
@@ -22,40 +23,53 @@ public final class RecoveryXFxApplication extends Application {
     @Override
     public void init() {
         LOGGER.info("Initializing RecoveryX Pro JavaFX application");
-        this.applicationContext = SpringContextBridge.start(getParameters().getRaw().toArray(String[]::new));
+
+        this.applicationContext = SpringContextBridge.start(
+                getParameters().getRaw().toArray(String[]::new));
     }
 
     @Override
     public void start(Stage primaryStage) {
         LOGGER.info("Starting RecoveryX Pro primary stage");
-    try {
-       // 1. Fetch your ApplicationShell from the Spring IoC Context
+
+        try {
+            Objects.requireNonNull(
+                    applicationContext,
+                    "Spring application context has not been initialized");
+
             ApplicationShell applicationShell = applicationContext.getBean(ApplicationShell.class);
 
-            // 2. Extract the view container and attach it to a new active scene graph
-            Scene scene = new Scene(applicationShell.getView(), 1280, 800);
-            primaryStage.setScene(scene);
+            /*
+             * This must happen before getView().
+             *
+             * initialize(Stage) creates the BorderPane, loads the
+             * drive-selection FXML, and attaches the scene.
+             */
+            applicationShell.initialize(primaryStage);
 
-            // 3. Configure window boundaries and title attributes
-            primaryStage.setTitle("RecoveryX Pro - Enterprise Recovery Platform");
+            primaryStage.setTitle(
+                    "RecoveryX Pro - Enterprise Recovery Platform");
             primaryStage.setMinWidth(1024);
             primaryStage.setMinHeight(720);
-            
-            // 4. Render layout structures to physical display hardware
             primaryStage.centerOnScreen();
             primaryStage.show();
-        
-    } catch (Exception e) {
-        LOGGER.error("Critical failure during JavaFX Stage startup", e);
-    }
+
+        } catch (Exception ex) {
+            LOGGER.error(
+                    "Critical failure during JavaFX Stage startup",
+                    ex);
+
+            Platform.exit();
+        }
     }
 
     @Override
     public void stop() {
         LOGGER.info("Stopping RecoveryX Pro");
+
         if (applicationContext != null) {
             applicationContext.close();
+            applicationContext = null;
         }
-        Platform.exit();
     }
 }

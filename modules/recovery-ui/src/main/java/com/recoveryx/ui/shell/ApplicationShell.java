@@ -3,108 +3,205 @@ package com.recoveryx.ui.shell;
 import com.recoveryx.core.model.scan.ScanRequest;
 import com.recoveryx.ui.controller.scan.ScanResultsController;
 import com.recoveryx.ui.util.SpringFxmlLoader;
+import javafx.application.Platform;
+import javafx.geometry.Pos;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Label;
+import javafx.scene.layout.BorderPane;
+import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import javafx.geometry.Pos;
-import javafx.scene.Parent;
-import javafx.scene.control.Label;
-import javafx.scene.layout.BorderPane;
+import java.util.Objects;
 
 /**
  * Root desktop shell responsible for presenting the primary application window.
  * Supports navigation between the drive-selection and scan-results views.
+ *
+ * JavaFX controls and FXML views are initialized only after JavaFX startup.
  */
 @Component
-@ConditionalOnProperty(
-        prefix = "recoveryx.ui",
-        name = "shell-enabled",
-        havingValue = "true",
-        matchIfMissing = true
-)
+@ConditionalOnProperty(prefix = "recoveryx.ui", name = "shell-enabled", havingValue = "true", matchIfMissing = true)
 public class ApplicationShell {
 
     private static final Logger log = LoggerFactory.getLogger(ApplicationShell.class);
 
-    private final BorderPane rootLayout;
     private final SpringFxmlLoader fxmlLoader;
 
-    // Cached drive selection view (re-used when navigating back)
+    private BorderPane rootLayout;
+    private Stage primaryStage;
     private Parent driveSelectionView;
 
     public ApplicationShell(SpringFxmlLoader fxmlLoader) {
-        this.fxmlLoader = fxmlLoader;
-        this.rootLayout = new BorderPane();
-        this.rootLayout.setPrefSize(1280, 800);
+        this.fxmlLoader = Objects.requireNonNull(
+                fxmlLoader,
+                "fxmlLoader");
+
+        /*
+         * Do not create JavaFX controls or load FXML here.
+         *
+         * Spring may construct this bean before the JavaFX toolkit has
+         * started, and FXML loading here causes a circular bean creation:
+         *
+         * ApplicationShell
+         * -> FXML loader
+         * -> DriveSelectionController
+         */
+    }
+
+    /**
+     * Initializes the JavaFX shell.
+     *
+     * Must be called from the JavaFX Application Thread after JavaFX startup.
+     */
+    public void initialize(Stage stage) {
+        if (!Platform.isFxApplicationThread()) {
+            throw new IllegalStateException(
+                    "ApplicationShell.initialize must run on the JavaFX Application Thread");
+        }
+
+        this.primaryStage = Objects.requireNonNull(stage, "stage");
+
+        if (this.rootLayout == null) {
+            this.rootLayout = new BorderPane();
+            this.rootLayout.setPrefSize(1280, 800);
+        }
+
         showDriveSelection();
     }
 
-    /** Navigate to drive selection (home) screen */
+    /**
+     * Navigates to the drive-selection screen.
+     */
     public void showDriveSelection() {
+        requireInitialized();
+
         try {
             if (driveSelectionView == null) {
-                driveSelectionView = fxmlLoader.load("/com/recoveryx/ui/fxml/drive/drive-selection-view.fxml");
-                log.info("Loaded drive-selection-view successfully.");
+                driveSelectionView = fxmlLoader.load(
+                        "/com/recoveryx/ui/fxml/drive/drive-selection-view.fxml");
+
+                log.info("Loaded drive-selection-view.fxml successfully.");
             }
+
             rootLayout.setCenter(driveSelectionView);
-        } catch (Exception e) {
-            log.error("Failed to load drive-selection-view.fxml: {}", e.getMessage(), e);
-            Label fallback = new Label("Error loading drive selection view: " + e.getMessage());
-            BorderPane.setAlignment(fallback, Pos.CENTER);
-            rootLayout.setCenter(fallback);
+            showRootLayout();
+
+        } catch (Exception ex) {
+            log.error(
+                    "Failed to load drive-selection-view.fxml",
+                    ex);
+
+            showError(
+                    "Error loading drive selection view",
+                    ex);
         }
     }
 
     /**
-     * Navigate to the scan results screen and immediately start a scan.
+     * Navigates to the scan-results screen and starts the scan.
      *
-     * @param request     the ScanRequest to execute
-     * @param destination destination folder for recovered files (or null for default)
+     * @param request     scan request
+     * @param destination destination folder, or null for the default
      */
-    public void showScanResults(ScanRequest request, String destination) {
+    public void showScanResults(
+            ScanRequest request,
+            String destination) {
+        requireInitialized();
+
+        Objects.requireNonNull(request, "request");
+
         try {
-            // Load a fresh scan-results view each time (new scan = new controller instance)
-            Parent resultsView = fxmlLoader.load("/com/recoveryx/ui/fxml/scan/scan-results-view.fxml");
+            SpringFxmlLoader.LoadedView<ScanResultsController> loadedView = fxmlLoader.loadWithController(
+                    "/com/recoveryx/ui/fxml/scan/scan-results-view.fxml",
+                    ScanResultsController.class);
 
-            // Get the controller so we can pass the request and hook up the back button
-            ScanResultsController controller = (ScanResultsController)
-                    resultsView.getProperties().get("fx:controller");
+            Parent resultsView = loadedView.root();
+            ScanResultsController controller = loadedView.controller();
 
-            // FXMLLoader stores the controller in user data
-            if (controller == null && resultsView.getUserData() instanceof ScanResultsController c) {
-                controller = c;
-            }
-
-            // Fallback: retrieve from Spring context via loader
-            // (Spring factory creates the bean — just call startScan via reflection-free approach)
-            // The loader's controllerFactory already wired the Spring bean; we need a reference.
-            // We use a workaround: store the controller in rootLayout userData after load.
-            if (controller == null) {
-                Object ud = rootLayout.getUserData();
-                if (ud instanceof ScanResultsController c) controller = c;
-            }
+            controller.setOnBack(this::showDriveSelection);
+            controller.startScan(request, destination);
 
             rootLayout.setCenter(resultsView);
+            showRootLayout();
 
-            // Wire back button and start scan through controller if we have it
-            if (controller != null) {
-                final ApplicationShell shell = this;
-                controller.setOnBack(shell::showDriveSelection);
-                controller.startScan(request, destination);
-            }
+            log.info("Navigated to scan-results-view.fxml.");
 
-            log.info("Navigated to scan-results-view.");
-        } catch (Exception e) {
-            log.error("Failed to load scan-results-view.fxml: {}", e.getMessage(), e);
+        } catch (Exception ex) {
+            log.error(
+                    "Failed to load scan-results-view.fxml",
+                    ex);
+
+            showError(
+                    "Error loading scan results view",
+                    ex);
         }
     }
 
     /**
-     * Exposes the root layout pane to be attached to the JavaFX scene.
+     * Returns the root layout to attach to a Scene.
      */
     public BorderPane getView() {
-        return this.rootLayout;
+        requireInitialized();
+        return rootLayout;
+    }
+
+    /**
+     * Returns the primary stage after initialization.
+     */
+    public Stage getPrimaryStage() {
+        return primaryStage;
+    }
+
+    /**
+     * Closes the primary window.
+     */
+    public void close() {
+        if (primaryStage != null) {
+            primaryStage.close();
+        }
+    }
+
+    private void showRootLayout() {
+        if (primaryStage.getScene() == null) {
+            primaryStage.setScene(new Scene(rootLayout));
+        } else if (primaryStage.getScene().getRoot() != rootLayout) {
+            primaryStage.getScene().setRoot(rootLayout);
+        }
+
+        primaryStage.setTitle("RecoveryX Pro");
+        primaryStage.show();
+    }
+
+    private void showError(String title, Exception ex) {
+        if (rootLayout == null) {
+            log.error("{}: {}", title, ex.getMessage());
+            return;
+        }
+
+        String message = ex.getMessage() == null
+                ? ex.getClass().getSimpleName()
+                : ex.getMessage();
+
+        Label fallback = new Label(title + ": " + message);
+        fallback.setWrapText(true);
+
+        BorderPane.setAlignment(fallback, Pos.CENTER);
+        rootLayout.setCenter(fallback);
+
+        if (primaryStage != null) {
+            showRootLayout();
+        }
+    }
+
+    private void requireInitialized() {
+        if (rootLayout == null || primaryStage == null) {
+            throw new IllegalStateException(
+                    "ApplicationShell has not been initialized. "
+                            + "Call initialize(Stage) from the JavaFX Application Thread first.");
+        }
     }
 }
